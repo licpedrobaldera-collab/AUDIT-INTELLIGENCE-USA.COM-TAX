@@ -20,6 +20,67 @@ model CPA_Afiliado {
   fechaAfiliacion DateTime @default(now())
   casos CasoTax[]
 }
+// /prisma/schema.prisma - AGREGA ESTO
+
+enum Role {
+  ADMIN // Tú - Pedro Baldera - Ves todo
+  MANAGER // Gerente - Asigna casos
+  SOCIO // Partner - Ve reportes preliminares y finales
+  CPA_AFILIADO // Contador Autorizado por Estado - Firma y cobra comisión
+  CLIENTE
+}
+
+model CPA_Afiliado {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  // DATOS LEGALES - PARA FIRMA
+  nombreCompleto  String   // Ej: John Smith, CPA
+  licenciaNumero  String   @unique // Ej: CPA-12345 NY - ESTE SERÁ SU CÓDIGO DE REGISTRO
+  estadoLicencia  String[] // ["NY","NJ","CA"] - Estados donde puede firmar
+  estadoPrincipal String   // Ej: NY
+  firmaDigitalUrl String   // PNG de su firma guardada en S3/Vercel Blob
+  selloCPAUrl     String   // Sello circular del CPA
+  credencialPTIN  String   // IRS PTIN Number
+  credencialEFIN  String?  // EFIN si tiene
+  // VERIFICACIÓN
+  verificado      Boolean  @default(false)
+  documentoLicenciaUrl String // Foto de licencia estatal
+  fechaVencimiento DateTime
+  // COMISIÓN
+  comisionPorcentaje Float @default(30.0) // 30% por cada caso firmado
+  comisionFija    Float @default(45.00) // O $45 fijo - Eliges
+  balancePendiente Float @default(0)
+  // HISTÓRICO
+  casosFirmados   Int      @default(0)
+  totalGanado     Float    @default(0)
+  fechaAfiliacion DateTime @default(now())
+  activo          Boolean  @default(true)
+  
+  casos           CasoTax[]
+}
+
+model CasoTax {
+  id              String   @id @default(cuid())
+  clienteId       String
+  anioFiscal      Int
+  estados         String[] // ["AL","NY"]
+  status          String   // PRELIMINAR, PENDIENTE_FIRMA, FIRMADO, COBRADO, ENTREGADO
+  // FLUJO DE FIRMA
+  cpaAsignadoId   String?
+  cpaAsignado     CPA_Afiliado? @relation(fields: [cpaAsignadoId], references: [id])
+  firmadoEn       DateTime?
+  ipFirma         String? // Para auditoría
+  // REPORTES
+  reportePreliminarUrl String? // Solo ADMIN/CPA pueden ver
+  reporteFinalUrl      String? // Cliente ve solo después de pago
+  // PAGO Y COMISIÓN
+  montoCobrado    Float
+  comisionCPA     Float
+  pagadoA_CPA     Boolean  @default(false)
+  // HIGHUB
+  highubFolderId  String?
+  highubSubido    Boolean @default(false)
+}
 
 model CasoTax {
   id String @id @default(cuid())

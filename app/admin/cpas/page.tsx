@@ -11,37 +11,17 @@ interface CPAUsuario {
   aprobado: boolean;
 }
 
-// Dentro de la fila de tu tabla (tbody) en app/admin/cpas/page.tsx, puedes integrar este flujo dinámico:
-const [telefonos, setTelefonos] = useState<Record<string, string>>({
-  '1': '+18297717390', // Default RD
-  '2': '+13055550199', // Ejemplo USA
-});
-
-const cambiarTelefono = (id: string, nuevoNumero: string) => {
-  setTelefonos(prev => ({
-    ...prev,
-    [id]: nuevoNumero
-  }));
-  // Aquí harías un fetch para guardar el nuevo número en tu base de datos o archivo de configuración
-  alert(`Teléfono del cliente actualizado a: ${nuevoNumero}`);
-};
-
-// Renderizado del input en la fila de la tabla del administrador:
-<td className="px-6 py-4">
-  <input 
-    type="text" 
-    value={telefonos[cpa.id] || "+18297717390"} 
-    onChange={(e) => cambiarTelefono(cpa.id, e.target.value)}
-    className="border border-gray-300 rounded px-2 py-1 text-xs font-mono w-36 bg-gray-50 focus:bg-white text-gray-900"
-    placeholder="+1 Ex: RD o USA"
-  />
-</td>
-
 export default function HistoricoCPAsPage() {
   const [cpas, setCpas] = useState<CPAUsuario[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [filtroEstado, setFiltroEstado] = useState<string>('TODOS');
   const VALOR_COMISION = 45;
+
+  // Estado para el control dinámico de teléfonos (Administrador)
+  const [telefonos, setTelefonos] = useState<Record<string, string>>({
+    '1': '+18297717390', // Default RD
+    '2': '+13055550199', // Ejemplo USA
+  });
 
   // Cargar datos desde el CSV a través de nuestra API
   useEffect(() => {
@@ -61,6 +41,14 @@ export default function HistoricoCPAsPage() {
     cargarDatos();
   }, []);
 
+  const cambiarTelefono = (id: string, nuevoNumero: string) => {
+    setTelefonos(prev => ({
+      ...prev,
+      [id]: nuevoNumero
+    }));
+    // Aquí puedes realizar un fetch para actualizarlo permanentemente en tu DB o config
+  };
+
   const handleAprobar = (id: string) => {
     setCpas(prevCpas =>
       prevCpas.map(cpa => cpa.id === id ? { ...cpa, aprobado: !cpa.aprobado } : cpa)
@@ -78,13 +66,14 @@ export default function HistoricoCPAsPage() {
     if (cpasFiltrados.length === 0) return;
 
     // 1. Definir encabezados
-    const encabezados = ["Identificador", "Licencia CPA", "PTIN", "Estado", "Casos Firmados", "Comision Acumulada (USD)", "Estatus Aprobacion"];
+    const encabezados = ["Identificador", "Licencia CPA", "PTIN", "Teléfono Destino", "Estado", "Casos Firmados", "Comision Acumulada (USD)", "Estatus Aprobacion"];
     
     // 2. Formatear filas con la información calculada
     const filas = cpasFiltrados.map(cpa => [
       `"${cpa.nombre}"`,
       `"${cpa.licencia}"`,
       `"${cpa.ptin}"`,
+      `"${telefonos[cpa.id] || '+18297717390'}"`,
       `"${cpa.estado}"`,
       cpa.casosFirmados,
       cpa.casosFirmados * VALOR_COMISION,
@@ -163,6 +152,7 @@ export default function HistoricoCPAsPage() {
                 <th className="px-6 py-4">Identificador</th>
                 <th className="px-6 py-4">Código Registro (Licencia)</th>
                 <th className="px-6 py-4">PTIN Asignado</th>
+                <th className="px-6 py-4">Celular Notificación (RD / USA)</th>
                 <th className="px-6 py-4 text-center">Estado</th>
                 <th className="px-6 py-4 text-center">Casos Consolidados</th>
                 <th className="px-6 py-4 text-right">Monto Acumulado ($45/u)</th>
@@ -172,7 +162,7 @@ export default function HistoricoCPAsPage() {
             <tbody className="divide-y divide-gray-100 text-sm">
               {cpasFiltrados.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-8 text-gray-400">
+                  <td colSpan={8} className="text-center py-8 text-gray-400">
                     No hay registros disponibles en el archivo de comisiones.
                   </td>
                 </tr>
@@ -184,6 +174,16 @@ export default function HistoricoCPAsPage() {
                       <td className="px-6 py-4 font-medium text-gray-900">{cpa.nombre}</td>
                       <td className="px-6 py-4 font-mono text-xs font-bold text-indigo-600">{cpa.licencia}</td>
                       <td className="px-6 py-4 font-mono text-xs text-gray-500">{cpa.ptin}</td>
+                      {/* Input dinámico para teléfonos del cliente */}
+                      <td className="px-6 py-4">
+                        <input 
+                          type="text" 
+                          value={telefonos[cpa.id] || "+18297717390"} 
+                          onChange={(e) => cambiarTelefono(cpa.id, e.target.value)}
+                          className="border border-gray-300 rounded px-2 py-1 text-xs font-mono w-40 bg-gray-50 focus:bg-white text-gray-900"
+                          placeholder="+1 Ex: RD o USA"
+                        />
+                      </td>
                       <td className="px-6 py-4 text-center">
                         <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-800">
                           {cpa.estado}
@@ -214,7 +214,6 @@ export default function HistoricoCPAsPage() {
         </div>
       </div>
 
-      {/* Sección Inferior de Acciones y Descargas */}
       <div className="mt-4 flex justify-end">
         <button
           onClick={descargarReporteCSV}
@@ -222,54 +221,3 @@ export default function HistoricoCPAsPage() {
           className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all shadow-sm ${
             cpasFiltrados.length === 0
               ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-              : 'bg-indigo-600 text-white hover:bg-indigo-700 active:bg-indigo-800'
-          }`}
-        >
-          📥 Descargar Reporte Actual ({filtroEstado})
-        </button>
-      </div>
-    </div>
-  );
-}
-
-import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
-
-export async function GET() {
-  try {
-    // Agrupar las comisiones por CPA directamente desde la base de datos
-    const comisiones = await prisma.comision.findMany({
-      include: { caso: true }
-    });
-
-    const mapeoCPAs: Record<string, { licencia: string; estado: string; casos: number }> = {};
-
-    comisiones.forEach(com => {
-      const key = com.codigoCpa;
-      if (!mapeoCPAs[key]) {
-        mapeoCPAs[key] = {
-          licencia: key,
-          estado: com.caso.estado,
-          casos: 0
-        };
-      }
-      mapeoCPAs[key].casos += 1;
-    });
-
-    const resultado = Object.values(mapeoCPAs).map((cpa, index) => ({
-      id: String(index + 1),
-      nombre: `CPA Profesional (${cpa.licencia})`,
-      licencia: cpa.licencia,
-      estado: cpa.estado,
-      casosFirmados: cpa.casos,
-      ptin: `PTIN-${100000 + index}`,
-      aprobado: true
-    }));
-
-    return NextResponse.json(resultado);
-  } catch (error) {
-    return NextResponse.json({ error: "Fallo al leer bitácora de base de datos" }, { status: 500 });
-  }
-}

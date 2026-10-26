@@ -1,0 +1,7 @@
+/HIGHUB/
+  /{ANIO}/{ESTADO}/{CLIENTE_ID}_{APELLIDO}/
+    /01_W2s/
+    /02_1040_Firmado/ 1040_2023_JuanPerez_FIRMADO_CPA-NY-12345.pdf
+    /03_Estado/
+    /04_Soporte_Firma/ Licencia_CPA-NY-12345.pdf + PTIN.pdf + Log_Firma.json
+    /05_Comision/ Recibo_Comision_CPA-NY-12345_$45.pdf

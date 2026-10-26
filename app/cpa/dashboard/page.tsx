@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 
 interface CasoAsignado {
   id: string;
@@ -11,8 +11,8 @@ interface CasoAsignado {
 }
 
 export default function CPADashboardPage() {
-  const [email, setEmail] = useState('carlos.mendoza@highub.com'); // Simulación de sesión
-  const [cpaData, setCpaData] = useState({
+  const [email] = useState('carlos.mendoza@highub.com');
+  const [cpaData] = useState({
     nombre: 'Carlos Mendoza',
     codigo: 'CPA-NY-12345',
     ptin: 'PTIN-654321',
@@ -22,17 +22,35 @@ export default function CPADashboardPage() {
   const [casos, setCasos] = useState<CasoAsignado[]>([
     { id: '101', cliente: 'JUAN_PEREZ', estado: 'NY', formulario: '1040', pdfOriginalPath: 'declaracion_juan.pdf', estatus: 'PENDIENTE' },
     { id: '102', cliente: 'ALICE_SMITH', estado: 'NY', formulario: '1040', pdfOriginalPath: 'declaracion_alice.pdf', estatus: 'PENDIENTE' },
-    { id: '103', cliente: 'ROBERT_CA', estado: 'CA', formulario: '1040', pdfOriginalPath: 'declaracion_robert.pdf', estatus: 'PENDIENTE' },
   ]);
 
-  const [firmaPng, setFirmaPng] = useState<string>('firma_digitalizada_render.png');
+  const [firmaBase64, setFirmaBase64] = useState<string | null>(null);
   const [procesandoId, setProcesandoId] = useState<string | null>(null);
   const [mensaje, setMensaje] = useState<{ texto: string; tipo: 'success' | 'error' } | null>(null);
 
-  // Filtrar casos automáticos por el estado asignado del CPA
-  const casosFiltrados = casos.filter(caso => caso.estado === cpaData.estado);
+  // Procesar archivo PNG local y convertir a Base64 string
+  const handleFirmaUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.type !== "image/png") {
+        setMensaje({ texto: "El formato debe ser estrictamente una imagen PNG (con fondo transparente preferiblemente).", tipo: 'error' });
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFirmaBase64(reader.result as string);
+        setMensaje({ texto: "Firma digital cargada y lista para estampar.", tipo: 'success' });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const ejecutarFirma = async (caso: CasoAsignado) => {
+    if (!firmaBase64) {
+      setMensaje({ texto: "❌ Error: Debes subir tu firma en formato PNG antes de procesar el documento.", tipo: 'error' });
+      return;
+    }
+
     setProcesandoId(caso.id);
     setMensaje(null);
 
@@ -47,21 +65,20 @@ export default function CPADashboardPage() {
           ptin: cpaData.ptin,
           estado: caso.estado,
           cliente: caso.cliente,
-          firmaPng: firmaPng
+          firmaPngBase64: firmaBase64 // Pasamos el binario codificado
         })
       });
 
       const resultado = await response.json();
 
       if (response.ok) {
-        setMensaje({ texto: `¡Caso de ${caso.cliente} firmado! Se ha procesado tu comisión de $45.`, tipo: 'success' });
-        // Actualizar el estado de la UI localmente (Bloquear preliminar)
+        setMensaje({ texto: `¡Caso firmado e inmovilizado con éxito! Registrada tu comisión de $45.`, tipo: 'success' });
         setCasos(prev => prev.map(c => c.id === caso.id ? { ...c, estatus: 'FIRMADO' } : c));
       } else {
-        setMensaje({ texto: resultado.error || 'Error al procesar la firma', tipo: 'error' });
+        setMensaje({ texto: resultado.error || 'Fallo de procesamiento', tipo: 'error' });
       }
     } catch (err) {
-      setMensaje({ texto: 'Error de conexión con el motor de firma.', tipo: 'error' });
+      setMensaje({ texto: 'Error de comunicación con el motor de firma.', tipo: 'error' });
     } finally {
       setProcesandoId(null);
     }
@@ -69,7 +86,7 @@ export default function CPADashboardPage() {
 
   return (
     <div className="p-6 max-w-5xl mx-auto bg-gray-50 min-h-screen text-gray-800">
-      {/* Encabezado Perfil */}
+      {/* Perfil del CPA */}
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <span className="bg-indigo-50 text-indigo-700 text-xs font-bold px-2.5 py-1 rounded-full uppercase">CPA Autenticado</span>
@@ -82,7 +99,27 @@ export default function CPADashboardPage() {
         </div>
       </div>
 
-      {/* Alertas */}
+      {/* Caja de Carga de Firma Física */}
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-8">
+        <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-2">🖋️ Configuración de Firma Hológrafa</h2>
+        <p className="text-xs text-gray-500 mb-4">Sube una fotografía o trazo digital de tu firma en formato PNG transparente para inyectarla sobre los formularios de impuestos.</p>
+        <div className="flex flex-col sm:flex-row items-center gap-4">
+          <input 
+            type="file" 
+            accept="image/png" 
+            onChange={handleFirmaUpload}
+            className="block w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
+          />
+          {firmaBase64 && (
+            <div className="p-2 border border-dashed border-gray-200 rounded-lg bg-gray-50">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={firmaBase64} alt="Firma Preliminar" className="h-12 max-w-[150px] object-contain mix-blend-multiply" />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Alertas dinámicas */}
       {mensaje && (
         <div className={`p-4 mb-6 rounded-lg font-medium text-sm border ${
           mensaje.tipo === 'success' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-red-50 text-red-800 border-red-200'
@@ -91,10 +128,10 @@ export default function CPADashboardPage() {
         </div>
       )}
 
-      {/* Listado de Casos */}
-      <h2 className="text-lg font-bold text-gray-900 mb-4">Casos Asignados en tu Estado ({cpaData.estado})</h2>
+      {/* Casos por firmar */}
+      <h2 className="text-lg font-bold text-gray-900 mb-4">Declaraciones Asignadas ({cpaData.estado})</h2>
       <div className="grid grid-cols-1 gap-4">
-        {casosFiltrados.map((caso) => (
+        {casos.filter(c => c.estado === cpaData.estado).map((caso) => (
           <div key={caso.id} className="bg-white p-5 rounded-xl shadow-xs border border-gray-200 flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4">
             <div>
               <div className="flex items-center gap-2">
@@ -104,22 +141,22 @@ export default function CPADashboardPage() {
                 }`}>{caso.estatus}</span>
               </div>
               <p className="text-base font-bold text-gray-900 mt-1">Formulario {caso.formulario} — {caso.cliente.replace('_', ' ')}</p>
-              <p className="text-xs text-gray-400 mt-1 font-mono">Archivo: {caso.pdfOriginalPath}</p>
             </div>
 
             <div className="flex items-center justify-end gap-3">
               {caso.estatus === 'FIRMADO' ? (
-                <div className="text-right">
-                  <span className="text-emerald-600 font-bold text-sm block">✓ Completado</span>
-                  <span className="text-xs text-gray-400 font-medium">+$45 USD Acumulados</span>
-                </div>
+                <span className="text-emerald-600 font-bold text-sm">✓ Firmado (+$45)</span>
               ) : (
                 <button
                   onClick={() => ejecutarFirma(caso)}
-                  disabled={procesandoId !== null}
-                  className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 text-white font-semibold py-2 px-5 rounded-lg text-sm transition-colors shadow-xs"
+                  disabled={procesandoId !== null || !firmaBase64}
+                  className={`font-semibold py-2 px-5 rounded-lg text-sm transition-colors shadow-xs ${
+                    !firmaBase64 
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200' 
+                      : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                  }`}
                 >
-                  {procesandoId === caso.id ? 'Estampando firma...' : 'Firmar y Ganar $45'}
+                  {procesandoId === caso.id ? 'Estampando...' : 'Firmar Caso'}
                 </button>
               )}
             </div>

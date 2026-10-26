@@ -11,6 +11,32 @@ interface CPAUsuario {
   aprobado: boolean;
 }
 
+// Dentro de la fila de tu tabla (tbody) en app/admin/cpas/page.tsx, puedes integrar este flujo dinámico:
+const [telefonos, setTelefonos] = useState<Record<string, string>>({
+  '1': '+18297717390', // Default RD
+  '2': '+13055550199', // Ejemplo USA
+});
+
+const cambiarTelefono = (id: string, nuevoNumero: string) => {
+  setTelefonos(prev => ({
+    ...prev,
+    [id]: nuevoNumero
+  }));
+  // Aquí harías un fetch para guardar el nuevo número en tu base de datos o archivo de configuración
+  alert(`Teléfono del cliente actualizado a: ${nuevoNumero}`);
+};
+
+// Renderizado del input en la fila de la tabla del administrador:
+<td className="px-6 py-4">
+  <input 
+    type="text" 
+    value={telefonos[cpa.id] || "+18297717390"} 
+    onChange={(e) => cambiarTelefono(cpa.id, e.target.value)}
+    className="border border-gray-300 rounded px-2 py-1 text-xs font-mono w-36 bg-gray-50 focus:bg-white text-gray-900"
+    placeholder="+1 Ex: RD o USA"
+  />
+</td>
+
 export default function HistoricoCPAsPage() {
   const [cpas, setCpas] = useState<CPAUsuario[]>([]);
   const [loading, setLoading] = useState<boolean>(true);

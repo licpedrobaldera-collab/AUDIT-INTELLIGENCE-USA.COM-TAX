@@ -1,0 +1,9 @@
+      - name: Ejecutar Motor de Firma
+        run: |
+          python motor_firma.py \
+            --pdf "${{ github.event.inputs.pdf_path }}" \
+            --nombre "Tu Nombre CPA" \
+            --codigo "CPA-NY-12345" \
+            --ptin "PTIN-654321" \
+            --estado "${{ github.event.inputs.estado }}" \
+            --cliente "${{ github.event.inputs.cliente }}"

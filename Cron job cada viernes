@@ -1,0 +1,4 @@
+// Cron job cada viernes
+const cpasConBalance = await prisma.cPA_Afiliado.findMany({ where: { balancePendiente: { gte: 50 } } })
+// Transfer $45 a cada CPA vía Stripe Transfer o Wise Payout a su cuenta
+// Marca pagadoA_CPA = true

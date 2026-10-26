@@ -82,6 +82,39 @@ model CasoTax {
   highubSubido    Boolean @default(false)
 }
 
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Caso {
+  id              String    @id @default(uuid())
+  cliente         String
+  estado          String    // Ejemplo: "NY", "DO"
+  formulario      String    @default("1040")
+  pdfOriginalPath String
+  pdfFirmadoUrl   String?   // URL persistente del archivo final
+  estatus         String    @default("PENDIENTE") // PENDIENTE o FIRMADO
+  fechaFirma      DateTime?
+  ipAuditoria     String?
+  codigoCpaFirma  String?
+  comision        Comision?
+}
+
+model Comision {
+  id             String   @id @default(uuid())
+  fechaRegistro  DateTime @default(now())
+  añoFiscal      String
+  monto          Decimal  @default(45.00)
+  codigoCpa      String
+  casoId         String   @unique
+  caso           Caso     @relation(fields: [casoId], references: [id])
+}
+
 model CasoTax {
   id String @id @default(cuid())
   clienteNombre String

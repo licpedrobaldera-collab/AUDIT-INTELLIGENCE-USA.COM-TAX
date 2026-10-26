@@ -1,0 +1,50 @@
+name: Motor de Firma HIGHUB
+
+on:
+  workflow_dispatch: # Permite activarlo manualmente o vía API
+    inputs:
+      pdf_path:
+        description: 'Ruta del archivo original'
+        required: true
+      estado:
+        description: 'Estado (Ej: NY)'
+        required: true
+      cliente:
+        description: 'Nombre del Cliente'
+        required: true
+
+jobs:
+  sign_document:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Descargar Repositorio
+      uses: actions/checkout@v4
+
+    - name: Configurar Python
+      uses: actions/setup-python@v5
+      with:
+        python-numeric: '3.10'
+
+    - name: Instalar Dependencias
+      run: pip install pymupdf
+
+    - name: Ejecutar Motor de Firma
+      env:
+        CPA_NAME: "Tu Nombre CPA"
+        CPA_CODE: "CPA-NY-12345"
+        CPA_PTIN: "PTIN-654321"
+      run: |
+        python motor_firma.py \
+          "${{ github.event.inputs.pdf_path }}" \
+          "$CPA_NAME" "$CPA_CODE" "$CPA_PTIN" \
+          "SIG-${{ github.event.inputs.cliente }}-OK" \
+          "${{ github.event.inputs.estado }}" \
+          "${{ github.event.inputs.cliente }}"
+
+    - name: Commit y Push a HIGHUB
+      run: |
+        git config --global user.name 'Highub Bot'
+        git config --global user.email 'bot@highub.com'
+        git add HIGHUB/
+        git commit -m "Estatus: FIRMADO - Cliente ${{ github.event.inputs.cliente }} - Comisión $45"
+        git push

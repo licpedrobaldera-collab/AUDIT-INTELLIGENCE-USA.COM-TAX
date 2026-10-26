@@ -1,0 +1,5 @@
+Caso #1045 - Cliente: Juan Perez - NY 2023 - $150 USD - Status: PAGADO
+-> Botón: ASIGNAR CPA FIRMANTE
+-> Sistema busca automáticamente: CPA_AFILIADO donde estadoLicencia contiene "NY" y activo=true y verificado=true
+-> Lista: [John Smith CPA-NY-12345 - Comisión $45 - 12 casos firmados]
+-> Click Asignar

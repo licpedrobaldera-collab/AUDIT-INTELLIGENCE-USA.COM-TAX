@@ -1,0 +1,5 @@
+- Nombre, Email, Teléfono
+- Número de Licencia CPA (Ej: `12345`) -> *El sistema crea automáticamente su Código Registro = `CPA-{ESTADO}-{LICENCIA}` Ej: `CPA-NY-12345`*
+- Estados donde está autorizado
+- PTIN, Subir foto de licencia, Subir firma PNG transparente
+- W-9 para pago de comisiones

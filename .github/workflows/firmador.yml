@@ -13,6 +13,14 @@ on:
         description: 'Nombre del Cliente'
         required: true
 
+    - name: Commit y Push a HIGHUB (Código + Contabilidad)
+      run: |
+        git config --global user.name 'Highub Bot'
+        git config --global user.email 'bot@highub.com'
+        git add HIGHUB/ comisiones_highub.csv
+        git commit -m "Estatus: FIRMADO - Cliente ${{ github.event.inputs.cliente }} - Comisión $45 registrada"
+        git push
+
 jobs:
   sign_document:
     runs-on: ubuntu-latest

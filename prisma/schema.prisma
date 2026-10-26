@@ -1,0 +1,37 @@
+generator client { provider = "prisma-client-js" }
+datasource db { provider = "sqlite" url = "file:./dev.db" }
+
+model CPA_Afiliado {
+  id String @id @default(cuid())
+  nombreCompleto String
+  email String @unique
+  licenciaNumero String @unique
+  codigoRegistro String @unique // ESTE ES = TU LICENCIA. Ej: CPA-NY-12345
+  estadoLicencia String // JSON ["NY","NJ"]
+  estadoPrincipal String
+  firmaDigitalUrl String // Firma PNG
+  credencialPTIN String
+  verificado Boolean @default(false)
+  comisionFija Float @default(45.00) // $45 por caso aprobado y cobrado
+  balancePendiente Float @default(0)
+  casosFirmados Int @default(0)
+  totalGanado Float @default(0)
+  activo Boolean @default(true)
+  fechaAfiliacion DateTime @default(now())
+  casos CasoTax[]
+}
+
+model CasoTax {
+  id String @id @default(cuid())
+  clienteNombre String
+  anioFiscal Int
+  estados String
+  status String @default("PRELIMINAR") // PRELIMINAR=CONFIDENCIAL solo ADMIN/CPA
+  cpaAsignadoId String?
+  cpaAsignado CPA_Afiliado? @relation(fields: [cpaAsignadoId], references: [id])
+  montoCobrado Float
+  comisionCPA Float @default(45.0)
+  reporteFinalUrl String?
+  highubSubido Boolean @default(false)
+  firmadoEn DateTime?
+}
